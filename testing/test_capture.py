@@ -1461,6 +1461,34 @@ def test_pickling_and_unpickling_encoded_file():
     pickle.loads(ef_as_str)
 
 
+def test_encoded_file_mode_binary_to_text():
+    # See issue #5262
+    # EncodedFile should not expose binary mode to avoid issues with external libraries
+    # that check for 'b' in mode to decide whether to write bytes or strings
+    
+    from tempfile import TemporaryFile
+    
+    # Test with a binary mode file (like what safe_text_dupfile creates)
+    with TemporaryFile(mode='rb+') as tmpfile:
+        encoded_file = capture.EncodedFile(tmpfile, 'utf-8')
+        
+        # The underlying buffer should have binary mode
+        assert 'b' in tmpfile.mode
+        
+        # But EncodedFile should report text mode (without 'b')
+        assert 'b' not in encoded_file.mode
+        assert encoded_file.mode == tmpfile.mode.replace('b', '')
+    
+    # Test with different binary modes
+    test_modes = ['wb', 'rb', 'ab', 'wb+', 'rb+', 'ab+']
+    for mode in test_modes:
+        with TemporaryFile(mode=mode) as tmpfile:
+            encoded_file = capture.EncodedFile(tmpfile, 'utf-8')
+            expected_mode = mode.replace('b', '')
+            assert encoded_file.mode == expected_mode
+            assert 'b' not in encoded_file.mode
+
+
 def test_global_capture_with_live_logging(testdir):
     # Issue 3819
     # capture should work with live cli logging
