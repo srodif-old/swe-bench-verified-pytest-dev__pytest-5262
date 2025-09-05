@@ -447,6 +447,15 @@ class EncodedFile(object):
         """Ensure that file.name is a string."""
         return repr(self.buffer)
 
+    @property
+    def mode(self):
+        """
+        Ensure that file.mode does not contain "b" for binary mode, since EncodedFile is a text wrapper.
+        """
+        buffer_mode = getattr(self.buffer, "mode", "")
+        # Remove 'b' from the mode since EncodedFile provides text interface
+        return buffer_mode.replace("b", "")
+
     def __getattr__(self, name):
         return getattr(object.__getattribute__(self, "buffer"), name)
 
